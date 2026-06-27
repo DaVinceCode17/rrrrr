@@ -16,21 +16,23 @@ public class DatabaseConnection {
         try {
             String dbUrl, dbUser, dbPassword, driver;
             
-            String railwayUrl = System.getenv("DATABASE_URL");
-            String railwayUser = System.getenv("DATABASE_USERNAME");
-            String railwayPass = System.getenv("DATABASE_PASSWORD");
+            // RAILWAY: Use environment variables
+            String railwayUrl = System.getenv("MYSQL_URL") != null ? System.getenv("MYSQL_URL") : System.getenv("DATABASE_URL");
+            String railwayUser = System.getenv("MYSQL_USER") != null ? System.getenv("MYSQL_USER") : System.getenv("DATABASE_USERNAME");
+            String railwayPass = System.getenv("MYSQL_PASSWORD") != null ? System.getenv("MYSQL_PASSWORD") : System.getenv("DATABASE_PASSWORD");
             
             if (railwayUrl != null && !railwayUrl.isEmpty()) {
-                if (railwayUrl.startsWith("postgresql://")) {
-                    dbUrl = railwayUrl.replace("postgresql://", "jdbc:postgresql://");
-                    driver = "org.postgresql.Driver";
-                } else {
-                    dbUrl = railwayUrl;
-                    driver = "org.postgresql.Driver";
+                System.out.println("✅ Using Railway MySQL Database");
+                dbUrl = railwayUrl;
+                if (!dbUrl.startsWith("jdbc:")) {
+                    dbUrl = "jdbc:mysql://" + dbUrl;
                 }
+                driver = "com.mysql.cj.jdbc.Driver";
                 dbUser = railwayUser != null ? railwayUser : "";
                 dbPassword = railwayPass != null ? railwayPass : "";
             } else {
+                // LOCAL: MySQL
+                System.out.println("✅ Using Local MySQL");
                 driver = "com.mysql.cj.jdbc.Driver";
                 dbUrl = "jdbc:mysql://localhost:3306/laundry_db?useSSL=false&serverTimezone=UTC";
                 dbUser = "root";
@@ -39,11 +41,28 @@ public class DatabaseConnection {
             
             Class.forName(driver);
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+            System.out.println("✅ Database connected successfully!");
             
         } catch (ClassNotFoundException e) {
+            System.err.println("❌ Driver not found: " + e.getMessage());
             throw new SQLException("Driver not found");
+        } catch (SQLException e) {
+            System.err.println("❌ Connection failed: " + e.getMessage());
+            throw e;
         }
         
         return connection;
+    }
+    
+    public static void closeConnection() {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+                connection = null;
+                System.out.println("✅ Database connection closed.");
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Error closing: " + e.getMessage());
+        }
     }
 }
