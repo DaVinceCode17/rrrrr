@@ -1,20 +1,4 @@
-package com.resources;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
-public class DatabaseConnection {
-    
-    private static Connection connection = null;
-    
-    public static Connection getConnection() throws SQLException {
-        if (connection != null && !connection.isClosed()) {
-            return connection;
-        }
-        
-        try {
-            String dbUrl, dbUser, dbPassword, driver;
             
             // RAILWAY: Use environment variables
             String railwayUrl = System.getenv("MYSQL_URL") != null ? System.getenv("MYSQL_URL") : System.getenv("DATABASE_URL");
